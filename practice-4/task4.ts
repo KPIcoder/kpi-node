@@ -1,5 +1,5 @@
 import os from "os";
-import si from "systeminformation"; // npm install systeminformation
+import si from "systeminformation";
 
 const getOperatingSystem = () =>
   `Operating system: ${os.type()} ${os.release()}`;
