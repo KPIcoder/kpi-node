@@ -28,17 +28,6 @@ console.log(areAnagrams("aabb", "abba")); // true
 
 // task 3
 
-type CustomObject = { [key: string]: CustomValue };
-type CustomArray = CustomValue[];
-type CustomValue =
-  | string
-  | number
-  | boolean
-  | Date
-  | CustomArray
-  | CustomObject
-  | null;
-
 const CLONE_OBJECT = {
   a: 32,
   b: {
@@ -50,47 +39,62 @@ const CLONE_OBJECT = {
     },
   },
 };
-function deepClone<T extends CustomValue>(value: T): T {
-  if (typeof value === "object" && value !== null) {
-    if (Array.isArray(value)) {
-      return (value as CustomArray).map(deepClone) as T;
+function deepClone<T extends object>(obj: T): T {
+  const cloneObj = {} as T;
+
+  for (const key in obj) {
+    const value = obj[key as keyof T];
+
+    if (value && typeof value === "object") {
+      cloneObj[key as keyof T] = deepClone(value);
     } else {
-      const result: CustomObject = {};
-      for (const key in value as CustomObject) {
-        result[key] = deepClone((value as CustomObject)[key]);
-      }
-      return result as T;
+      cloneObj[key as keyof T] = value;
     }
-  } else {
-    return value;
   }
+
+  return cloneObj;
 }
 
 console.log(deepClone(CLONE_OBJECT));
 
 // task 4
 
-type Func = (...args: number[]) => number;
-type WrappedFunc = (...args: number[]) => number;
-
-const wrapper = (func: Func): WrappedFunc => {
-  let cache: Record<string, number> = {};
-
-  return function (...args: number[]): number {
-    let key = JSON.stringify(args);
-
-    if (!cache[key]) {
-      cache[key] = func(...args);
-      console.log(`${cache[key]} calculated`);
-    } else {
-      console.log(`${cache[key]} from cache`);
-    }
-
-    return cache[key];
-  };
+type SumFunctionCachedValue = {
+  ms: number;
+  sum: number;
 };
 
+function wrapper(func: (...args: number[]) => number) {
+  const cache = new Map<string, SumFunctionCachedValue>();
+
+  return function (...args: number[]): number {
+    const key = JSON.stringify(args);
+    const cacheEntry = cache.get(key);
+
+    if (!cacheEntry) {
+      const sum = func(...args);
+      cache.set(key, { ms: Date.now(), sum });
+      console.log(`${sum} calculated`);
+      return sum;
+    }
+
+    const age = Date.now() - cacheEntry.ms;
+    const expireTime = 60 * 1000;
+
+    if (age > expireTime) {
+      const sum = func(...args);
+      cache.set(key, { ms: Date.now(), sum });
+      console.log(`${sum} recalculated`);
+      return sum;
+    }
+
+    console.log(`${cacheEntry.sum} from cache`);
+    return cacheEntry.sum;
+  };
+}
+
 const calc = (a: number, b: number, c: number): number => a + b + c;
+
 const cachedCalc = wrapper(calc);
 
 cachedCalc(2, 2, 3); // 7 calculated
