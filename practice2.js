@@ -1,18 +1,21 @@
 // task 1
 
+// one-line variant
+
+const oneLineAdder = (n) => (x) => x === undefined ? n : oneLineAdder(n + x);
+
+// rewritten with ternany variant
+
 function add(n) {
   const adder = function (x) {
-    if (x === undefined) {
-      return n;
-    } else {
-      return add(n + x);
-    }
+    return x === undefined ? n : add(n + x);
   };
 
   return adder;
 }
 
 console.log(add(2)(3)(5)(7)()); // 17
+console.log(oneLineAdder(2)(3)(5)(7)()); // 17
 
 // task 2
 
@@ -55,19 +58,31 @@ console.log(deepClone(CLONE_OBJECT));
 // task 4
 
 function wrapper(func) {
-  let cache = {};
+  const cache = new Map();
 
   return function (...args) {
-    let key = JSON.stringify(args);
+    const key = JSON.stringify(args);
+    const cacheEntry = cache.get(key);
 
-    if (!cache[key]) {
-      cache[key] = func(...args);
-      console.log(`${cache[key]} calculated`);
-    } else {
-      console.log(`${cache[key]} from cache`);
+    if (!cacheEntry) {
+      const result = func(...args);
+      cache.set(key, { time: Date.now(), result });
+      console.log(`${result} calculated`);
+      return result;
     }
 
-    return cache[key];
+    const age = Date.now() - cacheEntry.time;
+    const expireTime = 60 * 1000;
+
+    if (age > expireTime) {
+      const result = func(...args);
+      cache.set(key, { time: Date.now(), result });
+      console.log(`${result} recalculated`);
+      return result;
+    }
+
+    console.log(`${cacheEntry.result} from cache`);
+    return cacheEntry.result;
   };
 }
 
