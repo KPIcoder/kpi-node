@@ -1,16 +1,10 @@
 function arrayChangeDelete<T>(
-  array: T[],
+  array: Array<T>,
   deleteRule: (item: T) => boolean
-): T[] {
-  const deletedElements: T[] = [];
+): Array<T> {
+  const deletedElements = array.filter(deleteRule);
 
-  for (let i = 0; i < array.length; i++) {
-    if (deleteRule(array[i])) {
-      deletedElements.push(array[i]);
-      array.splice(i, 1);
-      i--;
-    }
-  }
+  array.splice(0, array.length, ...array.filter((item) => !deleteRule(item)));
 
   return deletedElements;
 }
