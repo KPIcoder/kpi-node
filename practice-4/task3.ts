@@ -1,25 +1,39 @@
-import fs from "fs/promises";
-import path from "path";
-import axios from "axios";
+import * as fs from "node:fs/promises";
+import path from "node:path";
+import { fetch } from "undici";
 
 // yarn ts-node .\practice-4\task3.ts .\practice-4\list.json
 
-async function parseWepPagesFromFile() {
+async function parseWebPagesFromFile() {
   const args = process.argv;
   const filePath = args[2];
 
-  const data = await fs.readFile(filePath);
-  const urls: string[] = JSON.parse(data.toString());
+  if (!filePath) {
+    console.error("File path not provided");
+    return;
+  }
 
-  const directoryName =
-    path.basename(filePath, path.extname(filePath)) + "_pages";
+  try {
+    const data = await fs.readFile(filePath);
+    const urls: string[] = JSON.parse(data.toString());
 
-  await fs.mkdir(directoryName, { recursive: true });
+    const directoryName =
+      path.basename(filePath, path.extname(filePath)) + "_pages";
 
-  for (let i = 0; i < urls.length; i++) {
-    const { data } = await axios.get(urls[i]);
-    await fs.writeFile(path.join(directoryName, `page${i}.html`), data);
+    await fs.mkdir(directoryName, { recursive: true });
+
+    await Promise.all(
+      urls.map(async (url, index) => {
+        const response = await fetch(url);
+        const body = await response.text();
+
+        await fs.writeFile(path.join(directoryName, `page${index}.html`), body);
+      })
+    );
+  } catch (e) {
+    const error = e instanceof Error ? e.message : "Unknown error";
+    console.error(error);
   }
 }
 
-parseWepPagesFromFile().catch(console.error);
+parseWebPagesFromFile();
