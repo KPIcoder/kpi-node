@@ -3,8 +3,8 @@ async function runSequent<T, U>(
   callback: (item: T, index: number) => Promise<U>
 ): Promise<U[]> {
   const result: U[] = [];
-  for (let i = 0; i < array.length; i++) {
-    const finishedTask = await callback(array[i], i);
+  for await (const [index, element] of array.entries()) {
+    const finishedTask = await callback(element, index);
     result.push(finishedTask);
   }
   return result;
